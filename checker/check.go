@@ -132,8 +132,7 @@ func (cr *Checker) Run() (err error) {
 	}
 
 	cr.Wg.Wait()
-	fmt.Println(cr.SuccessResult, "===")
-	fmt.Println(cr.FailResult, "===")
+	cr.writeResult()
 	return
 }
 
@@ -171,20 +170,20 @@ func (tk *Task) check() {
 		fmt.Printf("查询 %s 的票出错 (ticketNumber): %s ;原数据: %s \n", tk.Name, err.Error(), string(rsp))
 	}
 
-	result.CrowdTypeName, err = js.Get("data").Get("crowdTypeName").String()
-	if err != nil {
-		fmt.Printf("查询 %s 的票出错 (crowdTypeName): %s ;原数据: %s \n", tk.Name, err.Error(), string(rsp))
-	}
+	result.CrowdTypeName, _ = js.Get("data").Get("crowdTypeName").String()
+	// if err != nil {
+	// 	fmt.Printf("查询 %s 的票出错 (crowdTypeName): %s ;原数据: %s \n", tk.Name, err.Error(), string(rsp))
+	// }
 
-	result.StartDate, err = js.Get("data").Get("startDate").String()
-	if err != nil {
-		fmt.Printf("查询 %s 的票出错 (startDate): %s ;原数据: %s \n", tk.Name, err.Error(), string(rsp))
-	}
+	result.StartDate, _ = js.Get("data").Get("startDate").String()
+	// if err != nil {
+	// 	fmt.Printf("查询 %s 的票出错 (startDate): %s ;原数据: %s \n", tk.Name, err.Error(), string(rsp))
+	// }
 
-	result.StartDate, err = js.Get("data").Get("endDate").String()
-	if err != nil {
-		fmt.Printf("查询 %s 的票出错 (endDate): %s ;原数据: %s \n", tk.Name, err.Error(), string(rsp))
-	}
+	result.EndDate, _ = js.Get("data").Get("endDate").String()
+	// if err != nil {
+	// 	fmt.Printf("查询 %s 的票出错 (endDate): %s ;原数据: %s \n", tk.Name, err.Error(), string(rsp))
+	// }
 
 	ticketsArr := js.Get("data").Get("electronicCodeProductProviderOutBOS")
 
@@ -309,7 +308,7 @@ func (cr *Checker) writeResult() (err error) {
 			for key, val := range v.Tickets {
 				idx := key * 2
 				datas[idxKey[idx]+lint] = val.SkuName
-				datas[idxKey[idx+1]+lint] = val.SkuName
+				datas[idxKey[idx+1]+lint] = val.ChildStatusName
 			}
 			for key, value := range datas {
 				xlsx.SetCellValue(sheet, key, value)
@@ -335,10 +334,10 @@ func (cr *Checker) writeResult() (err error) {
 	xlsx.SetCellStyle(sheet, "A"+lints, "B"+lints, style)
 	xlsx.SetActiveSheet(indexSheet)
 	// ctype := mime.TypeByExtension(".xlsx")
-	xlsx.SaveAs(cur + "/" + time.Now().Format("20060102150405") + "-" + Ckr.Date)
+	xlsx.SaveAs(cur + "/" + time.Now().Format("20060102150405") + "-" + Ckr.Date + ".xlsx")
 
-	if len(cr.SuccessResult) > 0 {
-
+	if len(cr.FailResult) > 0 {
+		cr.writeFailResult()
 	}
 	return
 }
@@ -346,6 +345,12 @@ func (cr *Checker) writeResult() (err error) {
 func (cr *Checker) writeFailResult() {
 	file, err := os.Create(cur + "/" + "fail.txt")
 	if err != nil {
+		fmt.Println("写入失败结果文件失败;" + err.Error())
 		return
+	}
+	defer file.Close()
+
+	for _, v := range cr.FailResult {
+		file.WriteString(fmt.Sprintf("%s %s", v.VisitorName, v.Credential))
 	}
 }
