@@ -275,6 +275,12 @@ func (cr *Checker) writeResult() (err error) {
 				fmt.Printf("写入结果失败;err: %s \n", err.Error())
 				return err
 			}
+			// 未使用标红
+			style2, err := xlsx.NewStyle(`{"alignment":{"horizontal":"center","Vertical":"center"},"fill":{"type":"gradient","color":["#FF0000","#FF0000"],"shading":1}}`)
+			if err != nil {
+				fmt.Printf("写入结果失败2;err: %s \n", err.Error())
+				return err
+			}
 			xlsx.SetCellStyle(sheet, "A"+lint, "U"+lint, style1)
 			var datas = map[string]string{
 				"A" + lint: v.VisitorName,
@@ -309,6 +315,9 @@ func (cr *Checker) writeResult() (err error) {
 				idx := key * 2
 				datas[idxKey[idx]+lint] = val.SkuName
 				datas[idxKey[idx+1]+lint] = val.ChildStatusName
+				if val.ChildStatusName == "未使用" {
+					xlsx.SetCellStyle(sheet, idxKey[idx+1]+lint, idxKey[idx+1]+lint, style2)
+				}
 			}
 			for key, value := range datas {
 				xlsx.SetCellValue(sheet, key, value)
